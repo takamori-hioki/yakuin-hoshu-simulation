@@ -1,0 +1,1111 @@
+<title>役員報酬シミュレーション ― 手取り最大化ツール</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg-page:      #f7f6f3;
+    --surface-1:    #ffffff;
+    --surface-2:    #f0efea;
+    --text-primary: #1b2028;
+    --text-secondary: #5b6270;
+    --text-muted:   #8b8f97;
+    --border:       rgba(20,24,32,0.11);
+    --border-strong:rgba(20,24,32,0.18);
+    --accent:       #1f3a5f;
+    --accent-soft:  #e7edf3;
+    --accent-ink:   #ffffff;
+    --focus:        #2a78d6;
+
+    --s-personal:   #2a78d6;
+    --s-retained:   #1baf7a;
+    --s-levy:       #e34948;
+
+    --good-text:    #006300;
+    --good-bg:      #e5f4e3;
+
+    --chart-surface: #fcfcfb;
+    --grid:         #e1e0d9;
+    --axis:         #c3c2b7;
+    --shadow: 0 1px 2px rgba(20,24,32,0.04), 0 6px 20px -8px rgba(20,24,32,0.12);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --bg-page:      #111315;
+      --surface-1:    #191c1f;
+      --surface-2:    #202327;
+      --text-primary: #eceef0;
+      --text-secondary: #a7adb6;
+      --text-muted:   #767b83;
+      --border:       rgba(255,255,255,0.09);
+      --border-strong:rgba(255,255,255,0.16);
+      --accent:       #6f9cc4;
+      --accent-soft:  #223244;
+      --accent-ink:   #0d1117;
+      --focus:        #3987e5;
+
+      --s-personal:   #3987e5;
+      --s-retained:   #199e70;
+      --s-levy:       #e66767;
+
+      --good-text:    #4fce4f;
+      --good-bg:      #163318;
+
+      --chart-surface: #1a1a19;
+      --grid:         #2c2c2a;
+      --axis:         #383835;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 30px -10px rgba(0,0,0,0.5);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg-page:      #111315;
+    --surface-1:    #191c1f;
+    --surface-2:    #202327;
+    --text-primary: #eceef0;
+    --text-secondary: #a7adb6;
+    --text-muted:   #767b83;
+    --border:       rgba(255,255,255,0.09);
+    --border-strong:rgba(255,255,255,0.16);
+    --accent:       #6f9cc4;
+    --accent-soft:  #223244;
+    --accent-ink:   #0d1117;
+    --focus:        #3987e5;
+    --s-personal:   #3987e5;
+    --s-retained:   #199e70;
+    --s-levy:       #e66767;
+    --good-text:    #4fce4f;
+    --good-bg:      #163318;
+    --chart-surface: #1a1a19;
+    --grid:         #2c2c2a;
+    --axis:         #383835;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 10px 30px -10px rgba(0,0,0,0.5);
+  }
+  :root[data-theme="light"] {
+    color-scheme: light;
+    --bg-page:      #f7f6f3;
+    --surface-1:    #ffffff;
+    --surface-2:    #f0efea;
+    --text-primary: #1b2028;
+    --text-secondary: #5b6270;
+    --text-muted:   #8b8f97;
+    --border:       rgba(20,24,32,0.11);
+    --border-strong:rgba(20,24,32,0.18);
+    --accent:       #1f3a5f;
+    --accent-soft:  #e7edf3;
+    --accent-ink:   #ffffff;
+    --focus:        #2a78d6;
+    --s-personal:   #2a78d6;
+    --s-retained:   #1baf7a;
+    --s-levy:       #e34948;
+    --good-text:    #006300;
+    --good-bg:      #e5f4e3;
+    --chart-surface: #fcfcfb;
+    --grid:         #e1e0d9;
+    --axis:         #c3c2b7;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg-page);
+    color: var(--text-primary);
+    font-family: "Yu Gothic UI", "Hiragino Kaku Gothic ProN", "Noto Sans JP", system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app {
+    display: grid;
+    grid-template-columns: 320px minmax(0,1fr);
+    gap: 20px;
+    max-width: 1320px;
+    margin: 0 auto;
+    padding: 24px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+  }
+
+  /* ---------- shared card ---------- */
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+  }
+
+  /* ---------- sidebar (inputs) ---------- */
+  .sidebar { display: flex; flex-direction: column; gap: 14px; position: sticky; top: 24px; }
+  .sidebar-head { padding: 2px 4px 6px; }
+  .sidebar-head h1 { font-size: 17px; margin: 0 0 4px; letter-spacing: 0.01em; text-wrap: balance; }
+  .sidebar-head p { margin: 0; font-size: 12.5px; color: var(--text-secondary); }
+
+  .group { padding: 16px 16px 18px; }
+  .group + .group { margin-top: 0; }
+  .group-title {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-muted); margin: 0 0 12px;
+  }
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { font-size: 12.5px; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .field label .val { font-variant-numeric: tabular-nums; color: var(--text-primary); font-weight: 600; }
+
+  input[type="number"], .num-input {
+    width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-strong);
+    background: var(--surface-2); color: var(--text-primary); font-size: 13.5px;
+    font-variant-numeric: tabular-nums; font-family: inherit;
+  }
+  input[type="number"]:focus, input[type="range"]:focus-visible, .seg button:focus-visible, .stepper button:focus-visible {
+    outline: 2px solid var(--focus); outline-offset: 1px;
+  }
+  input[type="range"] {
+    width: 100%; accent-color: var(--accent); height: 18px; cursor: pointer;
+  }
+
+  .seg { display: flex; border: 1px solid var(--border-strong); border-radius: 9px; overflow: hidden; }
+  .seg button {
+    flex: 1; padding: 7px 8px; border: none; background: var(--surface-2); color: var(--text-secondary);
+    font-size: 12.5px; cursor: pointer; font-family: inherit; border-right: 1px solid var(--border-strong);
+  }
+  .seg button:last-child { border-right: none; }
+  .seg button.active { background: var(--accent); color: var(--accent-ink); font-weight: 600; }
+
+  .stepper { display: flex; align-items: center; gap: 8px; }
+  .stepper button {
+    width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--border-strong);
+    background: var(--surface-2); color: var(--text-primary); font-size: 15px; cursor: pointer; line-height: 1;
+  }
+  .stepper button:hover { background: var(--accent-soft); }
+  .stepper .n { min-width: 20px; text-align: center; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  details.adv { border-top: 1px dashed var(--border); margin-top: 4px; padding-top: 12px; }
+  details.adv summary {
+    cursor: pointer; font-size: 12px; color: var(--text-secondary); list-style: none; user-select: none;
+    display: flex; align-items: center; gap: 6px;
+  }
+  details.adv summary::-webkit-details-marker { display: none; }
+  details.adv summary::before { content: "▸"; font-size: 10px; color: var(--text-muted); transition: transform .15s; }
+  details.adv[open] summary::before { transform: rotate(90deg); }
+  details.adv .field { margin-top: 12px; }
+  .hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  /* ---------- main ---------- */
+  .main { display: flex; flex-direction: column; gap: 18px; }
+  .main-head h1 { font-size: 21px; margin: 0 0 4px; text-wrap: balance; }
+  .main-head p { margin: 0; color: var(--text-secondary); font-size: 13px; }
+
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 700px) { .stats-row { grid-template-columns: 1fr; } }
+  .stat { padding: 16px 18px; }
+  .stat .lbl { font-size: 11.5px; color: var(--text-muted); font-weight: 600; letter-spacing: 0.02em; }
+  .stat .val { font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; margin-top: 4px; }
+  .stat .sub { font-size: 12px; color: var(--text-secondary); margin-top: 3px; font-variant-numeric: tabular-nums; }
+  .stat.accentline { border-top: 3px solid var(--s-personal); border-radius: 14px 14px 12px 12px; }
+  .stat.accentline.retained { border-top-color: var(--s-retained); }
+  .stat.accentline.levy { border-top-color: var(--s-levy); }
+  .stat-in-card { background: var(--surface-2); border-radius: 12px; box-shadow: none; border: 1px solid var(--border); }
+
+  .chart-card { padding: 18px 18px 10px; }
+  .chart-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
+  .chart-head h2, .chart-head h3 { font-size: 15px; margin: 0 0 2px; }
+  .chart-head p { margin: 0; font-size: 12px; color: var(--text-secondary); }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; }
+  .legend .item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-secondary); }
+  .legend .sw { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+
+  .chart-wrap { position: relative; width: 100%; touch-action: none; }
+  svg.chart { width: 100%; height: auto; display: block; overflow: visible; }
+  .chart-tip {
+    position: absolute; pointer-events: none; background: var(--surface-1); border: 1px solid var(--border-strong);
+    border-radius: 9px; padding: 8px 10px; font-size: 11.5px; box-shadow: var(--shadow); white-space: nowrap;
+    transform: translate(-50%, -100%); top: 0; opacity: 0; transition: opacity .1s;
+  }
+  .chart-tip .row { display: flex; gap: 10px; justify-content: space-between; }
+  .chart-tip .row + .row { margin-top: 2px; }
+  .chart-tip b { font-variant-numeric: tabular-nums; }
+
+  .detail-card { padding: 18px; }
+  .detail-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+  .detail-head h2, .detail-head h3 { font-size: 15px; margin: 0; }
+  .badge-opt { font-size: 11px; font-weight: 700; color: var(--good-text); background: var(--good-bg); padding: 3px 8px; border-radius: 999px; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 700px) { .detail-grid { grid-template-columns: 1fr; } }
+  .detail-col h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin: 0 0 8px; }
+  table.breakdown { width: 100%; border-collapse: collapse; }
+  table.breakdown td { padding: 6px 0; font-size: 13px; border-bottom: 1px solid var(--border); }
+  table.breakdown td.k { color: var(--text-secondary); }
+  table.breakdown td.v { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+  table.breakdown tr.total td { border-top: 1px solid var(--border-strong); border-bottom: none; padding-top: 9px; font-weight: 700; }
+  table.breakdown tr.total td.v { color: var(--text-primary); }
+
+  .datatable-card summary {
+    cursor: pointer; padding: 14px 0; font-size: 13px; font-weight: 600; color: var(--text-secondary);
+    list-style: none; display: flex; align-items: center; gap: 8px; user-select: none;
+  }
+  .datatable-card summary::-webkit-details-marker { display: none; }
+  .datatable-card summary::before { content: "▸"; font-size: 11px; color: var(--text-muted); transition: transform .15s; }
+  .datatable-card[open] summary::before { transform: rotate(90deg); }
+  .table-scroll { overflow-x: auto; border-top: 1px solid var(--border); }
+  table.full { border-collapse: collapse; width: 100%; font-size: 12px; }
+  table.full th, table.full td { padding: 7px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+  table.full th { text-align: right; color: var(--text-muted); font-weight: 600; position: sticky; top: 0; background: var(--surface-1); font-size: 11px; }
+  table.full th:first-child, table.full td:first-child { text-align: left; }
+  table.full tbody tr:hover { background: var(--surface-2); }
+  table.full tbody tr.optrow { background: var(--good-bg); }
+
+  .footnote { font-size: 11px; color: var(--text-muted); padding: 4px 4px 0; line-height: 1.7; }
+
+  /* ---------- officer cards ---------- */
+  .officer-card { padding: 18px; display: flex; flex-direction: column; gap: 2px; }
+  .officer-card-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+  .officer-card-head h2 { font-size: 16px; margin: 0; }
+  .officer-inputs-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px 22px;
+    padding: 14px 16px; background: var(--surface-2); border-radius: 12px; margin-bottom: 16px;
+  }
+  @media (max-width: 700px) { .officer-inputs-grid { grid-template-columns: 1fr; } }
+  .officer-inputs-grid .field { margin-bottom: 0; }
+  .dep-row { display: flex; gap: 14px; flex-wrap: wrap; }
+  .dep-lbl { font-size: 12px; color: var(--text-secondary); }
+  .officer-section { margin-top: 4px; }
+  .officer-section + .officer-section { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--border); }
+</style>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <h1>入力条件</h1>
+      <p>数値を変えると右側の図表が即座に再計算されます。</p>
+    </div>
+
+    <div class="card group">
+      <div class="group-title">会社の前提</div>
+      <div class="field">
+        <label>税引前利益(役員報酬控除前・年額) <span class="val" id="lbl-profit">20,000,000円</span></label>
+        <input type="range" id="in-profit" min="0" max="100000000" step="500000" value="20000000">
+        <input type="number" class="num-input" id="in-profit-num" value="20000000" step="100000">
+      </div>
+      <div class="field">
+        <label>役員の人数</label>
+        <div class="stepper" id="stepper-officercount">
+          <button id="oc-minus">−</button><span class="n" id="oc-n">1</span><button id="oc-plus">+</button>
+        </div>
+        <div class="hint">最大5名まで。役員ごとに年齢・家族構成・報酬額を個別に設定し、各役員のシミュレーション表を並べて比較できます。</div>
+      </div>
+    </div>
+
+    <div class="card group">
+      <div class="group-title">料率・実効税率の設定</div>
+      <details class="adv" open>
+        <summary>全役員共通の料率設定</summary>
+        <div class="field">
+          <label>健康保険料率(協会けんぽ・兵庫県) <span class="val" id="lbl-kenpo">10.12%</span></label>
+          <input type="range" id="in-kenpo" min="0.05" max="0.14" step="0.0001" value="0.1012">
+        </div>
+        <div class="field">
+          <label>介護保険料率(40〜64歳) <span class="val" id="lbl-kaigo">1.62%</span></label>
+          <input type="range" id="in-kaigo" min="0" max="0.03" step="0.0001" value="0.0162">
+        </div>
+        <div class="field">
+          <label>厚生年金保険料率 <span class="val" id="lbl-kousei">18.30%</span></label>
+          <input type="range" id="in-kousei" min="0.10" max="0.20" step="0.001" value="0.183">
+        </div>
+        <div class="field">
+          <label>子ども・子育て拠出金率 <span class="val" id="lbl-kodomo">0.36%</span></label>
+          <input type="range" id="in-kodomo" min="0" max="0.01" step="0.0001" value="0.0036">
+        </div>
+        <div class="field">
+          <label>子ども・子育て支援金率(労使折半) <span class="val" id="lbl-shienkin">0.23%</span></label>
+          <input type="range" id="in-shienkin" min="0" max="0.01" step="0.0001" value="0.0023">
+          <div class="hint">全国一律。令和8年4月分から新設。健康保険の標準報酬月額をベースに労使折半で徴収されます(個人・会社の双方に反映済み)</div>
+        </div>
+        <div class="field">
+          <label>法人実効税率(年800万円以下) <span class="val" id="lbl-corplow">21.37%</span></label>
+          <input type="range" id="in-corplow" min="0.10" max="0.35" step="0.0001" value="0.2137">
+        </div>
+        <div class="field">
+          <label>法人実効税率(年800万円超) <span class="val" id="lbl-corphigh">33.58%</span></label>
+          <input type="range" id="in-corphigh" min="0.10" max="0.45" step="0.0001" value="0.3358">
+        </div>
+        <div class="hint">健康保険料率・介護保険料率は兵庫県・令和8年3月分以降の目安値です。都道府県・年度により異なるため必ず最新の協会けんぽ公表料率で検証してください。法人実効税率は全役員共通(会社は1社)で使用します。</div>
+      </details>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="main-head">
+      <h1>役員報酬シミュレーション</h1>
+      <p>税引前利益という「一つのパイ」が、役員報酬の水準によって個人の手取り・会社の内部留保・税金と社会保険料にどう配分されるかを可視化します。役員が複数いる場合は、各役員の年齢・家族構成・報酬額を個別に設定できます。</p>
+    </div>
+
+    <section class="card" style="padding:18px;">
+      <div class="detail-head">
+        <h2>全役員合計(現在の設定値ベース)</h2>
+      </div>
+      <div class="stats-row">
+        <div class="card stat accentline">
+          <div class="lbl">役員報酬の合計(年額)</div>
+          <div class="val" id="agg-x">―</div>
+          <div class="sub" id="agg-x-sub">―</div>
+        </div>
+        <div class="card stat accentline retained">
+          <div class="lbl">グループ全体のトータル手取り(内部留保+個人手取り合計)</div>
+          <div class="val" id="agg-total">―</div>
+          <div class="sub" id="agg-total-sub">―</div>
+        </div>
+        <div class="card stat accentline levy">
+          <div class="lbl">実効負担率(税金・社会保険料 ÷ 税引前利益)</div>
+          <div class="val" id="agg-rate">―</div>
+          <div class="sub" id="agg-rate-sub">―</div>
+        </div>
+      </div>
+      <div class="detail-grid" style="margin-top:18px;">
+        <div class="detail-col">
+          <h3>役員別 現在の設定(下の各役員カードのスライダーと連動)</h3>
+          <table class="breakdown" id="tbl-agg-officers"></table>
+        </div>
+        <div class="detail-col">
+          <h3>会社全体</h3>
+          <table class="breakdown" id="tbl-agg-company"></table>
+        </div>
+      </div>
+    </section>
+
+    <div id="officers-container" style="display:flex; flex-direction:column; gap:18px;"></div>
+
+    <p class="footnote">
+      ※ 本ツールは一般的なケースを想定した概算シミュレーションです。基礎控除・給与所得控除・配偶者控除/配偶者特別控除・特定親族特別控除は令和8年度税制改正(国税庁「源泉所得税の改正のあらまし 令和8年4月」)を反映した令和8・9年分の水準です。住民税の基礎控除(43万円)は同改正でも据置きのため変更していません。給与収入69.1万円〜220万円の間に設けられた端数調整の特例、住民税の調整控除、扶養控除の細分(同居老親等以外の老人扶養等)、社会保険の定時決定/随時改定のタイミングのズレ、住民税の非課税限度額判定は簡略化のため考慮していません。令和8年4月分から新設された「子ども・子育て支援金」(健康保険料と併せて労使折半、全国一律0.23%)は個人・会社双方の社会保険料に織り込み済みです。役員が複数いる場合、各役員のシミュレーション表は「他の役員の報酬は現在の設定値で固定」した前提での試算です(1人ずつ最適化を繰り返して全体をチューニングする使い方を想定しています)。「トータル手取り」は内部留保に対する将来の配当課税・退職金課税等を考慮しない単純合算の比較指標です。実際の申告・届出にあたっては必ず個別事情を確認し、正式な方法で検算してください。
+    </p>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ============================================================
+  // 計算エンジン(役員報酬シミュレーション Excel版と同一ロジック)
+  // ============================================================
+  const kenpoLower = [0,63000,73000,83000,93000,101000,107000,114000,122000,130000,138000,146000,155000,165000,175000,185000,195000,210000,230000,250000,270000,290000,310000,330000,350000,370000,395000,425000,455000,485000,515000,545000,575000,605000,635000,665000,695000,730000,770000,810000,855000,905000,955000,1005000,1055000,1115000,1175000,1235000,1295000,1355000];
+  const kenpoStd   = [58000,68000,78000,88000,98000,104000,110000,118000,126000,134000,142000,150000,160000,170000,180000,190000,200000,220000,240000,260000,280000,300000,320000,340000,360000,380000,410000,440000,470000,500000,530000,560000,590000,620000,650000,680000,710000,750000,790000,830000,880000,930000,980000,1030000,1090000,1150000,1210000,1270000,1330000,1390000];
+  const kouseiLower = [0,93000,101000,107000,114000,122000,130000,138000,146000,155000,165000,175000,185000,195000,210000,230000,250000,270000,290000,310000,330000,350000,370000,395000,425000,455000,485000,515000,545000,575000,605000,635000];
+  const kouseiStd   = [88000,98000,104000,110000,118000,126000,134000,142000,150000,160000,170000,180000,190000,200000,220000,240000,260000,280000,300000,320000,340000,360000,380000,410000,440000,470000,500000,530000,560000,590000,620000,650000];
+
+  function vlookupStd(monthly, lowerArr, stdArr) {
+    let idx = 0;
+    for (let i = 0; i < lowerArr.length; i++) { if (monthly >= lowerArr[i]) idx = i; else break; }
+    return stdArr[idx];
+  }
+
+  const taxBrackets = [
+    [0, 0.05, 0], [1950000, 0.10, 97500], [3300000, 0.20, 427500], [6950000, 0.23, 636000],
+    [9000000, 0.33, 1536000], [18000000, 0.40, 2796000], [40000000, 0.45, 4796000],
+  ];
+  // 令和8年度税制改正(基礎控除の引上げ・給与所得控除の最低保障額引上げ)反映後の水準
+  // 出典: 国税庁「源泉所得税の改正のあらまし 令和8年4月」
+  const kisoIncomeTax = [[0,1040000],[4890000,670000],[6550000,620000],[23500000,480000],[24000000,320000],[24500000,160000],[25000000,0]];
+  const KISO_JUMIN = 430000; // 個人住民税の基礎控除は令和8年度改正でも据置き(43万円)
+  // 配偶者控除・配偶者特別控除額(令和8・9年分)。行=配偶者の合計所得金額(下限)
+  // 列=[所得税(本人900万円以下/900万円超950万円以下/950万円超1000万円以下), 住民税(同左、33万/22万/11万を上限にキャップ)]
+  const haiguTable = [
+    [0,       380000, 260000, 130000, 330000, 220000, 110000],
+    [950001,  360000, 240000, 120000, 330000, 220000, 110000],
+    [1000001, 310000, 210000, 110000, 310000, 210000, 110000],
+    [1050001, 260000, 180000, 90000,  260000, 180000, 90000],
+    [1100001, 210000, 140000, 70000,  210000, 140000, 70000],
+    [1150001, 160000, 110000, 60000,  160000, 110000, 60000],
+    [1200001, 110000, 80000,  40000,  110000, 80000,  40000],
+    [1250001, 60000,  40000,  20000,  60000,  40000,  20000],
+    [1300001, 30000,  20000,  10000,  30000,  20000,  10000],
+    [1330001, 0,      0,      0,      0,      0,      0],
+  ];
+  // 特定親族特別控除(令和8年度税制改正で新設)。行=特定親族の合計所得金額(下限)、列=[所得税,住民税]
+  // 出典: 国税庁パンフレット。住民税は所得税額を45万円上限でキャップ(市区町村公表資料と整合確認済み)
+  const tokuteiShinzokuTable = [
+    [620001,  630000, 450000],
+    [850001,  610000, 450000],
+    [900001,  510000, 450000],
+    [950001,  410000, 410000],
+    [1000001, 310000, 310000],
+    [1050001, 210000, 210000],
+    [1100001, 110000, 110000],
+    [1150001, 60000,  60000],
+    [1200001, 30000,  30000],
+    [1230001, 0,      0],
+  ];
+
+  function lookupBracket(value, table) {
+    let result = table[0];
+    for (const row of table) { if (value >= row[0]) result = row; else break; }
+    return result;
+  }
+  function roundDown(v, digits) {
+    const f = Math.pow(10, digits);
+    return Math.floor(v * f + 1e-6) / f;
+  }
+  // 給与所得控除(令和8・9年分。最低保障額が65万円→74万円に引上げ)
+  // 国税庁パンフレット(1)ハの特例により、74万1,000円〜219万1,000円は控除額74万円固定が
+  // 通常式(190万円超220万円以下:収入×30%+8万円)より優先適用され、220万円ちょうどで
+  // 通常式に滑らかに接続する(2,200,000×30%+8万円=740,000)。219.1万円〜220万円の
+  // ごく狭い端数調整は影響が僅少のため簡略化し、220万円まで一律74万円としています。
+  function kyuyoKoujoFunc(X) {
+    if (X <= 2200000) return 740000;
+    if (X <= 3600000) return X * 0.3 + 80000;
+    if (X <= 6600000) return X * 0.2 + 440000;
+    if (X <= 8500000) return X * 0.1 + 1100000;
+    return 1950000;
+  }
+  function spouseTotalIncome(spouseIncome) {
+    if (spouseIncome <= 0) return 0;
+    return Math.max(spouseIncome - kyuyoKoujoFunc(spouseIncome), 0);
+  }
+  function filerTierIndex(kyuyoShotoku) {
+    if (kyuyoShotoku <= 9000000) return 0;
+    if (kyuyoShotoku <= 9500000) return 1;
+    if (kyuyoShotoku <= 10000000) return 2;
+    return -1;
+  }
+
+  function simulate(X, p) {
+    const monthly = X / 12;
+    const stdKenpo = X === 0 ? 0 : vlookupStd(monthly, kenpoLower, kenpoStd);
+    const stdKousei = X === 0 ? 0 : vlookupStd(monthly, kouseiLower, kouseiStd);
+
+    const kenpoRateTotal = p.kenpoRate + (p.ageOver40 ? p.kaigoRate : 0);
+    const shienkin = Math.round(stdKenpo * p.shienkinRate / 2 * 12);
+    const shakaihoKojin = Math.round(stdKenpo * kenpoRateTotal / 2 * 12) + Math.round(stdKousei * p.kouseiRate / 2 * 12) + shienkin;
+    const shakaihoKaisha = shakaihoKojin + Math.round(stdKousei * p.kodomoRate * 12);
+
+    const kyuyoKoujo = kyuyoKoujoFunc(X);
+    const kyuyoShotoku = Math.max(X - kyuyoKoujo, 0);
+
+    const tier = filerTierIndex(kyuyoShotoku);
+    const spouseIncomeTotal = spouseTotalIncome(p.spouseIncome);
+    const haiguRow = (p.hasSpouse && tier >= 0) ? lookupBracket(spouseIncomeTotal, haiguTable) : null;
+    const kiso = lookupBracket(kyuyoShotoku, kisoIncomeTax)[1];
+    const haigu = haiguRow ? haiguRow[1 + tier] : 0;
+    const haiguJuminAmt = haiguRow ? haiguRow[4 + tier] : 0;
+
+    const withIncome = p.specificDependentsWithIncome || 0;
+    const regularSpecificCount = Math.max(p.specificDependents - withIncome, 0);
+    const shinzokuTotalIncome = withIncome > 0 ? spouseTotalIncome(p.specificDependentIncome || 0) : 0;
+    const shinzokuRow = withIncome > 0 ? lookupBracket(shinzokuTotalIncome, tokuteiShinzokuTable) : null;
+    const shinzokuPerPersonTax = (shinzokuRow && shinzokuTotalIncome >= 620001) ? shinzokuRow[1] : (withIncome > 0 ? 630000 : 0);
+    const shinzokuPerPersonJumin = (shinzokuRow && shinzokuTotalIncome >= 620001) ? shinzokuRow[2] : (withIncome > 0 ? 450000 : 0);
+    const tokuteiShinzokuTax = shinzokuPerPersonTax * withIncome;
+    const tokuteiShinzokuJumin = shinzokuPerPersonJumin * withIncome;
+
+    const fuyouTax = p.generalDependents * 380000 + regularSpecificCount * 630000 + tokuteiShinzokuTax + p.elderlyDependents * 580000;
+    const shotokuKoujoGoukei = shakaihoKojin + kiso + haigu + fuyouTax;
+    const kazeiShotoku = roundDown(Math.max(kyuyoShotoku - shotokuKoujoGoukei, 0), -3);
+
+    const bracket = lookupBracket(kazeiShotoku, taxBrackets);
+    const shotokuzei = Math.max(roundDown(kazeiShotoku * bracket[1] - bracket[2], 0), 0);
+    const fukkou = roundDown(shotokuzei * 0.021, 0);
+    const shotokuzeiTotal = shotokuzei + fukkou;
+
+    const kisoJumin = KISO_JUMIN;
+    const haiguJumin = haiguJuminAmt;
+    const fuyouJumin = p.generalDependents * 330000 + regularSpecificCount * 450000 + tokuteiShinzokuJumin + p.elderlyDependents * 450000;
+    const juminKazeiShotoku = roundDown(Math.max(kyuyoShotoku - (shakaihoKojin + kisoJumin + haiguJumin + fuyouJumin), 0), -3);
+    const juminShotokuwari = juminKazeiShotoku * 0.10;
+    const juminKintouwari = 5000;
+    const juminTotal = juminShotokuwari + juminKintouwari;
+
+    const kojinFutanGoukei = shakaihoKojin + shotokuzeiTotal + juminTotal;
+    const kojinTedori = X - kojinFutanGoukei;
+
+    const kaishaCost = X + shakaihoKaisha;
+    const otherOfficersCost = p.otherOfficersCost || 0;
+    const otherOfficersTakeHome = p.otherOfficersTakeHome || 0;
+    const rieki = p.profitBefore - kaishaCost - otherOfficersCost;
+    let houjinzei;
+    if (rieki <= 0) houjinzei = 0;
+    else if (rieki <= 8000000) houjinzei = rieki * p.corpRateLow;
+    else houjinzei = 8000000 * p.corpRateLow + (rieki - 8000000) * p.corpRateHigh;
+    const naibuRyuho = rieki - houjinzei;
+    const total = naibuRyuho + kojinTedori + otherOfficersTakeHome;
+    const levyTotal = p.profitBefore - total;
+
+    return { X, stdKenpo, stdKousei, shakaihoKojin, shakaihoKaisha, kyuyoKoujo, kyuyoShotoku,
+      kazeiShotoku, shotokuzei, fukkou, shotokuzeiTotal, juminShotokuwari, juminKintouwari, juminTotal,
+      kojinFutanGoukei, kojinTedori, kaishaCost, rieki, houjinzei, naibuRyuho, total, levyTotal,
+      otherOfficersCost, otherOfficersTakeHome };
+  }
+
+  // ============================================================
+  // state
+  // ============================================================
+  function makeOfficer() {
+    return {
+      ageOver40: false, hasSpouse: true, spouseIncome: 0,
+      generalDependents: 0, specificDependents: 0, elderlyDependents: 0,
+      specificDependentsWithIncome: 0, specificDependentIncome: 0,
+      selectedX: 5000000,
+    };
+  }
+
+  const state = {
+    profitBefore: 20000000,
+    officers: [makeOfficer()],
+    kenpoRate: 0.1012,
+    kaigoRate: 0.0162,
+    kouseiRate: 0.183,
+    kodomoRate: 0.0036,
+    shienkinRate: 0.0023,
+    corpRateLow: 0.2137,
+    corpRateHigh: 0.3358,
+  };
+
+  function ratesParams() {
+    return {
+      kenpoRate: state.kenpoRate, kaigoRate: state.kaigoRate, kouseiRate: state.kouseiRate,
+      kodomoRate: state.kodomoRate, shienkinRate: state.shienkinRate,
+      corpRateLow: state.corpRateLow, corpRateHigh: state.corpRateHigh,
+    };
+  }
+
+  function officerParams(i, otherCost, otherTakeHome) {
+    const o = state.officers[i];
+    return Object.assign({
+      profitBefore: state.profitBefore,
+      ageOver40: o.ageOver40, hasSpouse: o.hasSpouse, spouseIncome: o.spouseIncome,
+      generalDependents: o.generalDependents, specificDependents: o.specificDependents, elderlyDependents: o.elderlyDependents,
+      specificDependentsWithIncome: o.specificDependentsWithIncome, specificDependentIncome: o.specificDependentIncome,
+      otherOfficersCost: otherCost || 0, otherOfficersTakeHome: otherTakeHome || 0,
+    }, ratesParams());
+  }
+
+  // aggregate contribution of every officer except `excludeIdx`, at their currently selected X
+  function othersAggregate(excludeIdx) {
+    let cost = 0, takeHome = 0;
+    state.officers.forEach((o, j) => {
+      if (j === excludeIdx) return;
+      const r = simulate(o.selectedX, officerParams(j, 0, 0));
+      cost += r.kaishaCost;
+      takeHome += r.kojinTedori;
+    });
+    return { cost, takeHome };
+  }
+
+  function computeAggregate() {
+    const perOfficer = state.officers.map((o, i) => simulate(o.selectedX, officerParams(i, 0, 0)));
+    let sumX = 0, sumKaishaCost = 0, sumKojinTedori = 0, sumShakaihoKaisha = 0;
+    perOfficer.forEach(r => {
+      sumX += r.X; sumKaishaCost += r.kaishaCost; sumKojinTedori += r.kojinTedori; sumShakaihoKaisha += r.shakaihoKaisha;
+    });
+    const rieki = state.profitBefore - sumKaishaCost;
+    let houjinzei;
+    if (rieki <= 0) houjinzei = 0;
+    else if (rieki <= 8000000) houjinzei = rieki * state.corpRateLow;
+    else houjinzei = 8000000 * state.corpRateLow + (rieki - 8000000) * state.corpRateHigh;
+    const naibuRyuho = rieki - houjinzei;
+    const grandTotal = naibuRyuho + sumKojinTedori;
+    const levyTotal = state.profitBefore - grandTotal;
+    return { perOfficer, sumX, sumKaishaCost, sumShakaihoKaisha, sumKojinTedori, rieki, houjinzei, naibuRyuho, grandTotal, levyTotal };
+  }
+
+  function buildSeriesForOfficer(i) {
+    const { cost, takeHome } = othersAggregate(i);
+    const p = officerParams(i, cost, takeHome);
+    const xMax = Math.max(state.profitBefore * 1.15, 15000000);
+    const N = 140;
+    const step = xMax / N;
+    const pts = [];
+    for (let k = 0; k <= N; k++) {
+      const X = Math.round((k * step) / 10000) * 10000;
+      pts.push(simulate(X, p));
+    }
+    return { pts, xMax };
+  }
+
+  function findOptimal(pts) {
+    let best = pts[0];
+    for (const r of pts) if (r.total > best.total) best = r;
+    return best;
+  }
+
+  function yen(v) { return Math.round(v).toLocaleString("ja-JP") + "円"; }
+  function man(v) { return (v / 10000).toLocaleString("ja-JP", { maximumFractionDigits: 0 }) + "万円"; }
+  function pct(v) { return (v * 100).toLocaleString("ja-JP", { maximumFractionDigits: 1, minimumFractionDigits: 1 }) + "%"; }
+  function row(k, v, cls) { return `<tr class="${cls||''}"><td class="k">${k}</td><td class="v">${v}</td></tr>`; }
+
+  // ============================================================
+  // officer card DOM (built once per officer, rebuilt only when officer count changes)
+  // ============================================================
+  const CHART = { w: 900, h: 380, padL: 68, padR: 16, padT: 14, padB: 34 };
+  const cachedOptByOfficer = {};
+
+  function officerCardTemplate(i) {
+    const o = state.officers[i];
+    return `
+    <section class="card officer-card" data-oi="${i}">
+      <div class="officer-card-head">
+        <h2>役員${i + 1}</h2>
+        <span class="hint" style="margin:0;">他の役員の報酬は現在の設定値で固定して計算します</span>
+      </div>
+      <div class="officer-inputs-grid">
+        <div class="field">
+          <label>年齢区分</label>
+          <div class="seg" data-role="seg-age">
+            <button data-v="under40" class="${!o.ageOver40 ? "active" : ""}">40歳未満</button>
+            <button data-v="over40" class="${o.ageOver40 ? "active" : ""}">40〜64歳</button>
+          </div>
+        </div>
+        <div class="field">
+          <label>配偶者</label>
+          <div class="seg" data-role="seg-spouse">
+            <button data-v="yes" class="${o.hasSpouse ? "active" : ""}">有</button>
+            <button data-v="no" class="${!o.hasSpouse ? "active" : ""}">無</button>
+          </div>
+        </div>
+        <div class="field" data-role="field-spouse-income" style="${o.hasSpouse ? "" : "display:none;"}">
+          <label>配偶者の給与収入(年間) <span class="val" data-role="lbl-spouseincome">${yen(o.spouseIncome)}</span></label>
+          <input type="range" data-role="in-spouseincome" min="0" max="2200000" step="10000" value="${o.spouseIncome}">
+          <div class="hint">136万円以下は配偶者控除、136万円超207万円以下は配偶者特別控除(段階的に減額)、207万円超は対象外です</div>
+        </div>
+        <div class="field">
+          <label>扶養親族の数</label>
+          <div class="dep-row">
+            <div class="stepper" data-dep="general"><span class="dep-lbl">一般</span><button data-d="-1">−</button><span class="n">${o.generalDependents}</span><button data-d="1">+</button></div>
+            <div class="stepper" data-dep="specific"><span class="dep-lbl">特定</span><button data-d="-1">−</button><span class="n">${o.specificDependents}</span><button data-d="1">+</button></div>
+            <div class="stepper" data-dep="elderly"><span class="dep-lbl">老人同居</span><button data-d="-1">−</button><span class="n">${o.elderlyDependents}</span><button data-d="1">+</button></div>
+          </div>
+        </div>
+        <div class="field" data-role="field-tokutei-income" style="${o.specificDependents > 0 ? "" : "display:none;"}">
+          <label>うち収入がある特定親族の人数(19〜22歳)</label>
+          <div class="stepper" data-dep="tokutei-with-income"><button data-d="-1">−</button><span class="n">${o.specificDependentsWithIncome}</span><button data-d="1">+</button></div>
+          <label style="margin-top:8px;">その親族の給与収入(年間・全員同額と仮定) <span class="val" data-role="lbl-tokuteiincome">${yen(o.specificDependentIncome)}</span></label>
+          <input type="range" data-role="in-tokuteiincome" min="0" max="2000000" step="10000" value="${o.specificDependentIncome}">
+          <div class="hint">合計所得62万円超123万円以下(給与収入136万円超197万円以下)で特定親族特別控除が段階的に適用されます</div>
+        </div>
+        <div class="field" style="grid-column: 1 / -1;">
+          <label>検証する役員報酬(年額) <span class="val" data-role="lbl-selected">${yen(o.selectedX)}</span></label>
+          <input type="range" data-role="in-selected" min="0" max="30000000" step="10000" value="${o.selectedX}">
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat stat-in-card accentline">
+          <div class="lbl">この役員の手取りが最大になる報酬(年額)</div>
+          <div class="val" data-role="stat-optx">―</div>
+          <div class="sub" data-role="stat-optx-sub">―</div>
+        </div>
+        <div class="stat stat-in-card accentline retained">
+          <div class="lbl">そのときのグループ全体のトータル手取り</div>
+          <div class="val" data-role="stat-opttotal">―</div>
+          <div class="sub" data-role="stat-opttotal-sub">―</div>
+        </div>
+        <div class="stat stat-in-card accentline levy">
+          <div class="lbl">そのときの実効負担率</div>
+          <div class="val" data-role="stat-optrate">―</div>
+          <div class="sub" data-role="stat-optrate-sub">―</div>
+        </div>
+      </div>
+
+      <div class="officer-section chart-card" style="padding:14px 0 4px;">
+        <div class="chart-head">
+          <div>
+            <h3>報酬水準別 配分シミュレーション</h3>
+            <p>横軸=この役員の報酬(年額)。線をドラッグ、またはクリックして報酬額を選択できます。</p>
+          </div>
+          <div class="legend">
+            <span class="item"><span class="sw" style="background:var(--s-personal)"></span>個人手取り</span>
+            <span class="item"><span class="sw" style="background:var(--s-retained)"></span>内部留保(会社)</span>
+            <span class="item"><span class="sw" style="background:var(--s-levy)"></span>税金・社会保険料合計</span>
+          </div>
+        </div>
+        <div class="chart-wrap" data-role="chart-wrap">
+          <svg class="chart" data-role="chart-svg" viewBox="0 0 900 380" preserveAspectRatio="none"></svg>
+          <div class="chart-tip" data-role="chart-tip"></div>
+        </div>
+      </div>
+
+      <div class="officer-section detail-card" style="padding:14px 0 4px;">
+        <div class="detail-head">
+          <h3>選択中の内訳 <span data-role="detail-x" style="font-weight:400;color:var(--text-secondary);"></span></h3>
+          <span class="badge-opt" data-role="badge-opt" style="display:none;">★ 最適水準</span>
+        </div>
+        <div class="detail-grid">
+          <div class="detail-col">
+            <h3>会社側(全役員合計ベース)</h3>
+            <table class="breakdown" data-role="tbl-company"></table>
+          </div>
+          <div class="detail-col">
+            <h3>個人側(この役員本人)</h3>
+            <table class="breakdown" data-role="tbl-personal"></table>
+          </div>
+        </div>
+      </div>
+
+      <details class="officer-section datatable-card" data-role="datatable-card">
+        <summary>役員${i + 1}の全シミュレーション結果を表で見る</summary>
+        <div class="table-scroll">
+          <table class="full" data-role="full-table"></table>
+        </div>
+      </details>
+    </section>`;
+  }
+
+  function rebuildOfficersDOM() {
+    const container = document.getElementById("officers-container");
+    container.innerHTML = state.officers.map((_, i) => officerCardTemplate(i)).join("");
+    document.querySelectorAll("#officers-container .officer-card").forEach(cardEl => {
+      wireOfficerCard(cardEl, parseInt(cardEl.dataset.oi, 10));
+    });
+  }
+
+  function wireOfficerCard(cardEl, i) {
+    const q = sel => cardEl.querySelector(sel);
+
+    q('[data-role="seg-age"]').addEventListener("click", e => {
+      const btn = e.target.closest("button"); if (!btn) return;
+      state.officers[i].ageOver40 = btn.dataset.v === "over40";
+      cardEl.querySelectorAll('[data-role="seg-age"] button').forEach(b => b.classList.toggle("active", b === btn));
+      render();
+    });
+
+    q('[data-role="seg-spouse"]').addEventListener("click", e => {
+      const btn = e.target.closest("button"); if (!btn) return;
+      state.officers[i].hasSpouse = btn.dataset.v === "yes";
+      cardEl.querySelectorAll('[data-role="seg-spouse"] button').forEach(b => b.classList.toggle("active", b === btn));
+      q('[data-role="field-spouse-income"]').style.display = state.officers[i].hasSpouse ? "" : "none";
+      render();
+    });
+
+    q('[data-role="in-spouseincome"]').addEventListener("input", e => {
+      state.officers[i].spouseIncome = parseInt(e.target.value, 10);
+      q('[data-role="lbl-spouseincome"]').textContent = yen(state.officers[i].spouseIncome);
+      render();
+    });
+
+    cardEl.querySelectorAll(".stepper").forEach(stepper => {
+      const key = stepper.dataset.dep;
+      const stateKey = key === "general" ? "generalDependents" : key === "specific" ? "specificDependents"
+        : key === "tokutei-with-income" ? "specificDependentsWithIncome" : "elderlyDependents";
+      stepper.querySelectorAll("button").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const delta = parseInt(btn.dataset.d, 10);
+          const o = state.officers[i];
+          const max = key === "tokutei-with-income" ? o.specificDependents : 9;
+          o[stateKey] = Math.max(0, Math.min(max, o[stateKey] + delta));
+          stepper.querySelector(".n").textContent = o[stateKey];
+          if (key === "specific" && o.specificDependentsWithIncome > o.specificDependents) {
+            o.specificDependentsWithIncome = o.specificDependents;
+            const withIncomeStepper = cardEl.querySelector('[data-dep="tokutei-with-income"] .n');
+            if (withIncomeStepper) withIncomeStepper.textContent = o.specificDependentsWithIncome;
+          }
+          q('[data-role="field-tokutei-income"]').style.display = o.specificDependents > 0 ? "" : "none";
+          render();
+        });
+      });
+    });
+
+    q('[data-role="in-tokuteiincome"]').addEventListener("input", e => {
+      state.officers[i].specificDependentIncome = parseInt(e.target.value, 10);
+      q('[data-role="lbl-tokuteiincome"]').textContent = yen(state.officers[i].specificDependentIncome);
+      render();
+    });
+
+    q('[data-role="in-selected"]').addEventListener("input", e => {
+      state.officers[i].selectedX = parseInt(e.target.value, 10);
+      q('[data-role="lbl-selected"]').textContent = yen(state.officers[i].selectedX);
+      render();
+    });
+  }
+
+  // ============================================================
+  // per-officer rendering
+  // ============================================================
+  function renderChartForOfficer(cardEl, i, pts, xMax, opt) {
+    const svg = cardEl.querySelector('[data-role="chart-svg"]');
+    const o = state.officers[i];
+    const yMax = state.profitBefore > 0 ? state.profitBefore : Math.max(...pts.map(d => d.total + d.levyTotal));
+    const innerW = CHART.w - CHART.padL - CHART.padR;
+    const innerH = CHART.h - CHART.padT - CHART.padB;
+
+    const xScale = X => CHART.padL + (X / xMax) * innerW;
+    const yScale = V => CHART.padT + innerH - (Math.max(V, 0) / yMax) * innerH;
+
+    function areaPath(getTop, getBottom) {
+      let d = "";
+      pts.forEach((pt, idx) => {
+        const x = xScale(pt.X), y = yScale(getTop(pt));
+        d += (idx === 0 ? "M" : "L") + x.toFixed(1) + "," + y.toFixed(1) + " ";
+      });
+      for (let idx = pts.length - 1; idx >= 0; idx--) {
+        const x = xScale(pts[idx].X), y = yScale(getBottom(pts[idx]));
+        d += "L" + x.toFixed(1) + "," + y.toFixed(1) + " ";
+      }
+      return d + "Z";
+    }
+
+    const bandPersonalTop = pt => pt.kojinTedori;
+    const bandRetainedTop = pt => pt.kojinTedori + pt.naibuRyuho;
+    const bandLevyTop = pt => pt.kojinTedori + pt.naibuRyuho + pt.levyTotal;
+
+    const pathPersonal = areaPath(bandPersonalTop, () => 0);
+    const pathRetained = areaPath(bandRetainedTop, bandPersonalTop);
+    const pathLevy = areaPath(bandLevyTop, bandRetainedTop);
+
+    let gridSvg = "";
+    const gridN = 4;
+    for (let g = 0; g <= gridN; g++) {
+      const v = yMax * g / gridN;
+      const y = yScale(v);
+      gridSvg += `<line x1="${CHART.padL}" y1="${y}" x2="${CHART.w - CHART.padR}" y2="${y}" stroke="var(--grid)" stroke-width="1" />`;
+      gridSvg += `<text x="${CHART.padL - 8}" y="${y + 4}" text-anchor="end" font-size="10.5" fill="var(--text-muted)" font-family="inherit">${man(v)}</text>`;
+    }
+    let xAxisSvg = `<line x1="${CHART.padL}" y1="${CHART.padT + innerH}" x2="${CHART.w - CHART.padR}" y2="${CHART.padT + innerH}" stroke="var(--axis)" stroke-width="1" />`;
+    const xTicks = 5;
+    for (let t = 0; t <= xTicks; t++) {
+      const X = xMax * t / xTicks;
+      const x = xScale(X);
+      xAxisSvg += `<text x="${x}" y="${CHART.padT + innerH + 20}" text-anchor="middle" font-size="10.5" fill="var(--text-muted)" font-family="inherit">${man(X)}</text>`;
+    }
+
+    const optX = xScale(opt.X);
+    const optMarker = `
+      <line x1="${optX}" y1="${CHART.padT}" x2="${optX}" y2="${CHART.padT + innerH}" stroke="var(--good-text)" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.85" />
+      <circle cx="${optX}" cy="${CHART.padT - 2}" r="3.5" fill="var(--good-text)" />
+      <text x="${optX}" y="${CHART.padT - 8}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--good-text)" font-family="inherit">最適</text>
+    `;
+
+    const selX = xScale(o.selectedX);
+
+    svg.innerHTML = `
+      ${gridSvg}
+      <path d="${pathPersonal}" fill="var(--s-personal)" />
+      <path d="${pathRetained}" fill="var(--s-retained)" />
+      <path d="${pathLevy}" fill="var(--s-levy)" />
+      ${xAxisSvg}
+      ${optMarker}
+      <line data-role="cursor-line" x1="${selX}" y1="${CHART.padT}" x2="${selX}" y2="${CHART.padT + innerH}" stroke="var(--text-primary)" stroke-width="1.5" />
+      <circle data-role="cursor-dot" cx="${selX}" cy="${CHART.padT}" r="5" fill="var(--surface-1)" stroke="var(--text-primary)" stroke-width="2" />
+      <rect data-role="hit-area" x="${CHART.padL}" y="${CHART.padT}" width="${innerW}" height="${innerH}" fill="transparent" style="cursor:pointer" />
+    `;
+
+    const hit = svg.querySelector('[data-role="hit-area"]');
+    const tip = cardEl.querySelector('[data-role="chart-tip"]');
+    const wrap = cardEl.querySelector('[data-role="chart-wrap"]');
+
+    function updateFromClientX(clientX) {
+      const rect = svg.getBoundingClientRect();
+      const relX = (clientX - rect.left) / rect.width * CHART.w;
+      const frac = Math.min(1, Math.max(0, (relX - CHART.padL) / innerW));
+      let X = Math.round((frac * xMax) / 10000) * 10000;
+      X = Math.min(Math.round(xMax), Math.max(0, X));
+      o.selectedX = X;
+      cardEl.querySelector('[data-role="in-selected"]').value = X;
+      cardEl.querySelector('[data-role="lbl-selected"]').textContent = yen(X);
+
+      const others = othersAggregate(i);
+      const r = simulate(X, officerParams(i, others.cost, others.takeHome));
+      renderOfficerDetail(cardEl, r, cachedOptByOfficer[i] || opt);
+
+      const cx = xScale(X);
+      const line = svg.querySelector('[data-role="cursor-line"]');
+      const dot = svg.querySelector('[data-role="cursor-dot"]');
+      if (line) { line.setAttribute("x1", cx); line.setAttribute("x2", cx); }
+      if (dot) dot.setAttribute("cx", cx);
+      highlightOfficerTableRow(cardEl, X);
+
+      const wrapRect = wrap.getBoundingClientRect();
+      const svgRect = svg.getBoundingClientRect();
+      const tipLeftPx = svgRect.left - wrapRect.left + (cx / CHART.w) * svgRect.width;
+      tip.style.left = tipLeftPx + "px";
+      tip.style.opacity = "1";
+      tip.innerHTML = `
+        <div style="font-weight:700; margin-bottom:4px;">役員${i + 1} 報酬 ${yen(X)}</div>
+        <div class="row"><span>個人手取り</span><b>${yen(r.kojinTedori)}</b></div>
+        <div class="row"><span>内部留保</span><b>${yen(r.naibuRyuho)}</b></div>
+        <div class="row"><span>税金・社会保険料合計</span><b>${yen(r.levyTotal)}</b></div>
+      `;
+    }
+
+    let dragging = false;
+    hit.addEventListener("pointerdown", e => { dragging = true; hit.setPointerCapture(e.pointerId); updateFromClientX(e.clientX); });
+    hit.addEventListener("pointermove", e => { if (dragging) updateFromClientX(e.clientX); });
+    hit.addEventListener("pointerup", () => { dragging = false; tip.style.opacity = "0"; render(); });
+    hit.addEventListener("pointerleave", () => { if (!dragging) tip.style.opacity = "0"; });
+  }
+
+  function renderOfficerDetail(cardEl, r, opt) {
+    cardEl.querySelector('[data-role="detail-x"]').textContent = "― " + yen(r.X) + "(" + man(r.X) + ")";
+    cardEl.querySelector('[data-role="badge-opt"]').style.display = (r.X === opt.X) ? "" : "none";
+
+    const company = [
+      row("役員報酬(年額)", yen(r.X)),
+      row("社会保険料(会社負担・この役員分)", yen(r.shakaihoKaisha)),
+      row("他の役員の会社コスト(現在設定)", yen(r.otherOfficersCost)),
+      row("会社コスト合計(全役員)", yen(r.kaishaCost + r.otherOfficersCost)),
+      row("役員報酬控除後利益", yen(r.rieki)),
+      row("法人税等", yen(r.houjinzei)),
+      row("内部留保(税引後)", yen(r.naibuRyuho), "total"),
+    ].join("");
+    cardEl.querySelector('[data-role="tbl-company"]').innerHTML = company;
+
+    const personal = [
+      row("給与収入(役員報酬)", yen(r.X)),
+      row("給与所得控除", yen(r.kyuyoKoujo)),
+      row("給与所得", yen(r.kyuyoShotoku)),
+      row("社会保険料(個人負担)", yen(r.shakaihoKojin)),
+      row("所得税+復興特別所得税", yen(r.shotokuzeiTotal)),
+      row("住民税", yen(r.juminTotal)),
+      row("個人手取り額", yen(r.kojinTedori), "total"),
+    ].join("");
+    cardEl.querySelector('[data-role="tbl-personal"]').innerHTML = personal;
+  }
+
+  function renderOfficerFullTable(cardEl, i, pts, opt) {
+    const table = cardEl.querySelector('[data-role="full-table"]');
+    const cols = [
+      ["役員報酬(年額)", r => yen(r.X)],
+      ["個人手取り", r => yen(r.kojinTedori)],
+      ["社会保険料(個人)", r => yen(r.shakaihoKojin)],
+      ["所得税等", r => yen(r.shotokuzeiTotal)],
+      ["住民税", r => yen(r.juminTotal)],
+      ["会社コスト(全役員)", r => yen(r.kaishaCost + r.otherOfficersCost)],
+      ["法人税等", r => yen(r.houjinzei)],
+      ["内部留保", r => yen(r.naibuRyuho)],
+      ["トータル手取り", r => yen(r.total)],
+      ["実効負担率", r => pct(r.levyTotal / (state.profitBefore || 1))],
+    ];
+    const step = Math.max(1, Math.floor(pts.length / 45));
+    const rows = pts.filter((_, idx) => idx % step === 0 || pts[idx].X === opt.X);
+    let thead = "<thead><tr>" + cols.map(c => `<th>${c[0]}</th>`).join("") + "</tr></thead>";
+    let tbody = "<tbody>" + rows.map(r => {
+      const cls = r.X === opt.X ? ' class="optrow"' : "";
+      return `<tr data-x="${r.X}"${cls}>` + cols.map(c => `<td>${c[1](r)}</td>`).join("") + "</tr>";
+    }).join("") + "</tbody>";
+    table.innerHTML = thead + tbody;
+
+    table.querySelectorAll("tbody tr").forEach(tr => {
+      tr.style.cursor = "pointer";
+      tr.addEventListener("click", () => {
+        state.officers[i].selectedX = parseInt(tr.dataset.x, 10);
+        render();
+      });
+    });
+  }
+
+  function highlightOfficerTableRow(cardEl, X) {
+    const table = cardEl.querySelector('[data-role="full-table"]');
+    if (!table) return;
+    table.querySelectorAll("tbody tr").forEach(tr => {
+      tr.style.outline = (parseInt(tr.dataset.x, 10) === X) ? "2px solid var(--focus)" : "";
+    });
+  }
+
+  // ============================================================
+  // top-level render
+  // ============================================================
+  function render() {
+    const agg = computeAggregate();
+    document.getElementById("agg-x").textContent = yen(agg.sumX);
+    document.getElementById("agg-x-sub").textContent = man(agg.sumX) + "  ／  税引前利益の " + pct(state.profitBefore ? agg.sumX / state.profitBefore : 0);
+    document.getElementById("agg-total").textContent = yen(agg.grandTotal);
+    document.getElementById("agg-total-sub").textContent = man(agg.grandTotal) + "  ／  内訳: 個人合計 " + man(agg.sumKojinTedori) + " + 内部留保 " + man(agg.naibuRyuho);
+    document.getElementById("agg-rate").textContent = pct(state.profitBefore ? agg.levyTotal / state.profitBefore : 0);
+    document.getElementById("agg-rate-sub").textContent = "税金・社会保険料合計 " + man(agg.levyTotal);
+
+    const officersRows = agg.perOfficer.map((r, idx) => row("役員" + (idx + 1), yen(r.X) + "(手取り " + yen(r.kojinTedori) + ")")).join("")
+      + row("役員報酬 合計", yen(agg.sumX), "total");
+    document.getElementById("tbl-agg-officers").innerHTML = officersRows;
+
+    const companyRows = [
+      row("社会保険料(会社負担合計)", yen(agg.sumShakaihoKaisha)),
+      row("会社コスト合計(全役員)", yen(agg.sumKaishaCost)),
+      row("役員報酬控除後利益", yen(agg.rieki)),
+      row("法人税等", yen(agg.houjinzei)),
+      row("内部留保(税引後)", yen(agg.naibuRyuho), "total"),
+    ].join("");
+    document.getElementById("tbl-agg-company").innerHTML = companyRows;
+
+    document.querySelectorAll("#officers-container .officer-card").forEach(cardEl => {
+      const i = parseInt(cardEl.dataset.oi, 10);
+      const o = state.officers[i];
+      const { pts, xMax } = buildSeriesForOfficer(i);
+      const opt = findOptimal(pts);
+      cachedOptByOfficer[i] = opt;
+
+      cardEl.querySelector('[data-role="stat-optx"]').textContent = yen(opt.X);
+      cardEl.querySelector('[data-role="stat-optx-sub"]').textContent = man(opt.X);
+      cardEl.querySelector('[data-role="stat-opttotal"]').textContent = yen(opt.total);
+      cardEl.querySelector('[data-role="stat-opttotal-sub"]').textContent = man(opt.total);
+      cardEl.querySelector('[data-role="stat-optrate"]').textContent = pct(state.profitBefore ? opt.levyTotal / state.profitBefore : 0);
+      cardEl.querySelector('[data-role="stat-optrate-sub"]').textContent = "税金・社会保険料合計 " + man(opt.levyTotal);
+
+      const selSlider = cardEl.querySelector('[data-role="in-selected"]');
+      selSlider.max = Math.round(xMax);
+      if (o.selectedX > xMax) o.selectedX = Math.round(xMax / 2 / 10000) * 10000;
+      selSlider.value = o.selectedX;
+      cardEl.querySelector('[data-role="lbl-selected"]').textContent = yen(o.selectedX);
+
+      renderChartForOfficer(cardEl, i, pts, xMax, opt);
+      const others = othersAggregate(i);
+      const r = simulate(o.selectedX, officerParams(i, others.cost, others.takeHome));
+      renderOfficerDetail(cardEl, r, opt);
+      renderOfficerFullTable(cardEl, i, pts, opt);
+    });
+  }
+
+  // ============================================================
+  // wire up shared controls
+  // ============================================================
+  function syncProfit(v) {
+    state.profitBefore = v;
+    document.getElementById("lbl-profit").textContent = yen(v);
+    document.getElementById("in-profit").value = v;
+    document.getElementById("in-profit-num").value = v;
+  }
+  document.getElementById("in-profit").addEventListener("input", e => { syncProfit(parseInt(e.target.value, 10)); render(); });
+  document.getElementById("in-profit-num").addEventListener("input", e => {
+    const v = Math.max(0, parseInt(e.target.value || "0", 10));
+    syncProfit(v); render();
+  });
+
+  function syncOfficerCountUI() {
+    document.getElementById("oc-n").textContent = state.officers.length;
+    document.getElementById("oc-minus").disabled = state.officers.length <= 1;
+    document.getElementById("oc-plus").disabled = state.officers.length >= 5;
+  }
+  document.getElementById("oc-minus").addEventListener("click", () => {
+    if (state.officers.length <= 1) return;
+    state.officers.pop();
+    syncOfficerCountUI();
+    rebuildOfficersDOM();
+    render();
+  });
+  document.getElementById("oc-plus").addEventListener("click", () => {
+    if (state.officers.length >= 5) return;
+    state.officers.push(makeOfficer());
+    syncOfficerCountUI();
+    rebuildOfficersDOM();
+    render();
+  });
+
+  function bindRate(id, key, labelId) {
+    const el = document.getElementById(id);
+    el.addEventListener("input", e => {
+      state[key] = parseFloat(e.target.value);
+      document.getElementById(labelId).textContent = pct(state[key]);
+      render();
+    });
+  }
+  bindRate("in-kenpo", "kenpoRate", "lbl-kenpo");
+  bindRate("in-kaigo", "kaigoRate", "lbl-kaigo");
+  bindRate("in-kousei", "kouseiRate", "lbl-kousei");
+  bindRate("in-kodomo", "kodomoRate", "lbl-kodomo");
+  bindRate("in-shienkin", "shienkinRate", "lbl-shienkin");
+  bindRate("in-corplow", "corpRateLow", "lbl-corplow");
+  bindRate("in-corphigh", "corpRateHigh", "lbl-corphigh");
+
+  // initial render
+  syncOfficerCountUI();
+  rebuildOfficersDOM();
+  render();
+})();
+</script>

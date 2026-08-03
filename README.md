@@ -1,0 +1,48 @@
+# 役員報酬シミュレーション
+
+法人の役員報酬水準を検討するためのシミュレーションツール。役員報酬の金額によって、個人の手取り・会社の内部留保・税金/社会保険料の負担がどう変化するかを試算する。
+
+役員が複数いる場合にも対応し、各役員の年齢・家族構成・報酬額を個別に設定できる。
+
+## 反映している制度(令和8年分ベース)
+
+- 健康保険料率(協会けんぽ・兵庫県)、介護保険料率、厚生年金保険料率
+- 子ども・子育て拠出金(会社負担)、子ども・子育て支援金(労使折半、令和8年4月分から新設)
+- 所得税(基礎控除・給与所得控除・配偶者控除/配偶者特別控除・特定親族特別控除・扶養控除)
+  - 令和8年度税制改正(国税庁「源泉所得税の改正のあらまし 令和8年4月」)を反映した令和8・9年分の水準
+- 住民税(基礎控除・扶養控除・所得割・均等割)
+- 法人税等(資本金1億円以下を想定した実効税率、2段階)
+
+## ファイル構成
+
+| ファイル | 内容 |
+|---|---|
+| `gen_xlsx.js` | Excel版(`役員報酬シミュレーション.xlsx`)を生成するNode.jsスクリプト |
+| `calc_reference.js` | 独立実装のリファレンス計算ロジック(検算用) |
+| `yakuin_hoshu_sim.html` | インタラクティブなArtifact版(ブラウザで直接開いて操作可能) |
+| `役員報酬シミュレーション.xlsx` | 配布用のExcelテンプレート(生成済み) |
+| `verify_*.js` | Excel/Artifactの計算結果を`calc_reference.js`と突き合わせる検算スクリプト |
+
+## Excel版の再生成
+
+```
+node gen_xlsx.js
+```
+
+## 検算の実行
+
+```
+node verify_reform2026.js
+node verify_tokuteishinzoku.js
+node verify_artifact.js
+node verify_multi_officer.js
+node verify_multi_xlsx.js
+node verify_haigu_xlsx.js
+node verify_tokuteishinzoku_xlsx.js
+```
+
+(`verify_multi_xlsx.js` 等はExcel検算に [HyperFormula](https://www.npmjs.com/package/hyperformula) と [ExcelJS](https://www.npmjs.com/package/exceljs) を使用)
+
+## 注意事項
+
+一般的なケースを想定した概算シミュレーション。住民税の調整控除、給与収入69.1万円〜220万円の間のごく狭い端数調整、社会保険の定時決定/随時改定のタイミングのズレ等は簡略化のため考慮していない。実際の申告・届出にあたっては必ず個別事情を確認し、正式な方法で検算すること。
