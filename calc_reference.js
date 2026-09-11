@@ -109,6 +109,9 @@ function simulate(X, params) {
     specificDependentsWithIncome = 0, specificDependentIncome = 0,
     kenpoRate = 0.1012, kaigoRate = 0.0162, kouseiRate = 0.183, kodomoRate = 0.0036, shienkinRate = 0.0023,
     corpRateLow = 0.2137, corpRateHigh = 0.3358,
+    // 法人住民税の均等割。資本金等1,000万円以下・従業者50人以下の標準額(道府県2万円+市町村5万円)。
+    // 資本金等1,000万円超1億円以下なら18万円など、規模に応じて変わるため上書きできるようにしている。
+    houjinKintouwari = 70000,
     otherOfficersCost = 0, otherOfficersTakeHome = 0,
   } = params;
 
@@ -154,32 +157,38 @@ function simulate(X, params) {
   const fuyouJumin = generalDependents * 330000 + regularSpecificCount * 450000 + tokuteiShinzokuJumin + elderlyDependents * 450000;
   const juminKazeiShotoku = roundDown(Math.max(kyuyoShotoku - (shakaihoKojin + kisoJumin + haiguJumin + fuyouJumin), 0), -3);
   const juminShotokuwari = juminKazeiShotoku * 0.10;
-  const juminKintouwari = 5000;
-  const juminTotal = juminShotokuwari + juminKintouwari;
+  const juminKintouwari = 4000; // 個人住民税の均等割（標準税率）。令和6年度から道府県民税1,000円＋市町村民税3,000円＝4,000円（森林環境税1,000円は別建て）
+  // 森林環境税(国税)。令和6年度から個人住民税の均等割と併せて年1,000円が賦課徴収される
+  const shinrinKankyoZei = 1000;
+  const juminTotal = juminShotokuwari + juminKintouwari + shinrinKankyoZei;
 
   const kojinFutanGoukei = shakaihoKojin + shotokuzeiTotal + juminTotal;
   const kojinTedori = X - kojinFutanGoukei;
 
   const kaishaCost = X + shakaihoKaisha;
   const rieki = profitBefore - kaishaCost - otherOfficersCost;
-  let houjinzei;
-  if (rieki <= 0) houjinzei = 0;
-  else if (rieki <= 8000000) houjinzei = rieki * corpRateLow;
-  else houjinzei = 8000000 * corpRateLow + (rieki - 8000000) * corpRateHigh;
+  // 所得に応じた部分(実効税率ベース)。赤字なら0
+  let houjinShotokuBun;
+  if (rieki <= 0) houjinShotokuBun = 0;
+  else if (rieki <= 8000000) houjinShotokuBun = rieki * corpRateLow;
+  else houjinShotokuBun = 8000000 * corpRateLow + (rieki - 8000000) * corpRateHigh;
+  // 法人住民税の均等割は赤字でも課されるため、利益の有無にかかわらず加算する
+  const houjinzei = houjinShotokuBun + houjinKintouwari;
   const naibuRyuho = rieki - houjinzei;
   const total = naibuRyuho + kojinTedori + otherOfficersTakeHome;
   const levyTotal = profitBefore - total;
 
   return { X, stdKenpo, stdKousei, shakaihoKojin, shakaihoKaisha, kyuyoKoujo, kyuyoShotoku,
     shotokuKoujoGoukei, kazeiShotoku, shotokuzei, fukkou, shotokuzeiTotal,
-    juminShotokuwari, juminKintouwari, juminTotal, kojinFutanGoukei, kojinTedori,
-    kaishaCost, rieki, houjinzei, naibuRyuho, total, levyTotal,
+    juminShotokuwari, juminKintouwari, shinrinKankyoZei, juminTotal, kojinFutanGoukei, kojinTedori,
+    kaishaCost, rieki, houjinShotokuBun, houjinKintouwari, houjinzei, naibuRyuho, total, levyTotal,
     otherOfficersCost, otherOfficersTakeHome };
 }
 
-module.exports = { simulate };
+// Node（検算スクリプト）とブラウザ（管理者用_計算過程.html）の両方から使えるようにする
+if (typeof module === 'object' && module.exports) module.exports = { simulate };
 
-if (require.main === module) {
+if (typeof require !== 'undefined' && typeof module === 'object' && require.main === module) {
   const params = { profitBefore: 20000000, ageOver40: false, hasSpouse: true, spouseIncome: 0,
     generalDependents: 0, specificDependents: 0, elderlyDependents: 0 };
   for (const X of [3000000, 6000000, 10000000, 15000000, 24000000]) {

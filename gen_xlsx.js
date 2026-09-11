@@ -35,10 +35,10 @@ function officerRows(k) {
 }
 
 const RATES_HEADER_ROW = 59;
-const RATE_ROWS = { kenpo: 60, kaigo: 61, kousei: 62, kodomo: 63, shienkin: 64, corplow: 65, corphigh: 66 };
-const SIMRANGE_HEADER_ROW = 68;
-const SIMRANGE_ROWS = { start: 69, end: 70, step: 71 };
-const CAVEAT_ROW = 73;
+const RATE_ROWS = { kenpo: 60, kaigo: 61, kousei: 62, kodomo: 63, shienkin: 64, corplow: 65, corphigh: 66, corpkintou: 67 };
+const SIMRANGE_HEADER_ROW = 69;
+const SIMRANGE_ROWS = { start: 70, end: 71, step: 72 };
+const CAVEAT_ROW = 74;
 
 // ============================================================
 // 結果サマリーシートの行レイアウト定数
@@ -146,6 +146,8 @@ label(wsIn, RATE_ROWS.corplow, '法人実効税率（年800万円以下の部分
 wsIn.getCell(`C${RATE_ROWS.corplow}`).value = 0.2137; wsIn.getCell(`C${RATE_ROWS.corplow}`).numFmt = PCT; wsIn.getCell(`C${RATE_ROWS.corplow}`).fill = yellow;
 label(wsIn, RATE_ROWS.corphigh, '法人実効税率（年800万円超の部分）', '同上（軽減税率の適用外部分）');
 wsIn.getCell(`C${RATE_ROWS.corphigh}`).value = 0.3358; wsIn.getCell(`C${RATE_ROWS.corphigh}`).numFmt = PCT; wsIn.getCell(`C${RATE_ROWS.corphigh}`).fill = yellow;
+label(wsIn, RATE_ROWS.corpkintou, '法人住民税 均等割（年額）', '資本金等1,000万円以下・従業者50人以下の標準額（道府県2万円＋市町村5万円）。赤字でも課されます。資本金等1,000万円超1億円以下なら18万円など、規模と所在自治体により異なります');
+wsIn.getCell(`C${RATE_ROWS.corpkintou}`).value = 70000; wsIn.getCell(`C${RATE_ROWS.corpkintou}`).numFmt = YEN; wsIn.getCell(`C${RATE_ROWS.corpkintou}`).fill = yellow;
 
 header(wsIn, SIMRANGE_HEADER_ROW, '【シミュレーション範囲（各役員のシミュレーションシートで共通）】');
 label(wsIn, SIMRANGE_ROWS.start, '役員報酬（年額）開始', '');
@@ -155,7 +157,7 @@ wsIn.getCell(`C${SIMRANGE_ROWS.end}`).value = 36000000; wsIn.getCell(`C${SIMRANG
 label(wsIn, SIMRANGE_ROWS.step, '刻み幅', '');
 wsIn.getCell(`C${SIMRANGE_ROWS.step}`).value = 500000; wsIn.getCell(`C${SIMRANGE_ROWS.step}`).numFmt = YEN; wsIn.getCell(`C${SIMRANGE_ROWS.step}`).fill = yellow;
 
-wsIn.getCell(`B${CAVEAT_ROW}`).value = '※本シートは一般的なケースを想定した概算シミュレーションです。実際の申告・届出にあたっては必ず個別事情を確認し、税額・社会保険料は正式な計算方法で検算してください。住民税の調整控除、配偶者特別控除、扶養控除の細分（同居老親等以外の老人扶養等）、社会保険の定時決定・随時改定のタイミングのズレ、住民税の非課税限度額判定（所得が極めて低い場合の均等割非課税等）は簡略化のため考慮していません。役員報酬0円付近の結果は参考値としての精度が低い点にご留意ください。役員が複数いる場合、各「シミュレーション」シートは「他の役員の報酬は結果サマリーシートで採用した金額のまま固定」した前提で、その役員自身の報酬額だけを動かした試算です。';
+wsIn.getCell(`B${CAVEAT_ROW}`).value = '※本シートは一般的なケースを想定した概算シミュレーションです。実際の申告・届出にあたっては必ず個別事情を確認し、税額・社会保険料は正式な計算方法で検算してください。住民税の調整控除、配偶者特別控除、扶養控除の細分（同居老親等以外の老人扶養等）、社会保険の定時決定・随時改定のタイミングのズレ、住民税の非課税限度額判定（所得が極めて低い場合の均等割非課税等）は簡略化のため考慮していません。個人住民税の均等割に併せて課される森林環境税（年1,000円）と、法人住民税の均等割（赤字でも発生。標準額7万円。入力シートで変更可）は織り込んでいます。防衛特別法人税（令和8年4月1日以後開始事業年度、基準法人税額の4％・年500万円控除）は反映していません。役員報酬0円付近の結果は参考値としての精度が低い点にご留意ください。役員が複数いる場合、各「シミュレーション」シートは「他の役員の報酬は結果サマリーシートで採用した金額のまま固定」した前提で、その役員自身の報酬額だけを動かした試算です。';
 wsIn.getCell(`B${CAVEAT_ROW}`).font = { size: 9, color: { argb: 'FFC00000' } };
 wsIn.getCell(`B${CAVEAT_ROW}`).alignment = { wrapText: true };
 wsIn.mergeCells(`B${CAVEAT_ROW}:D${CAVEAT_ROW + 4}`);
@@ -235,7 +237,7 @@ wsRef.getCell('R1').value = '固定控除額等';
 wsRef.getCell('R1').font = { bold: true };
 const fixedVals = [
   ['基礎控除（住民税・据置き。合計所得2,400万円以下）', 430000],
-  ['住民税 均等割＋森林環境税（標準額）', 5000],
+  ['住民税 均等割＋森林環境税（標準額。均等割4,000円＋森林環境税1,000円）', 5000],
   ['住民税 所得割率', 0.10],
   ['扶養控除（所得税）一般', 380000],
   ['扶養控除（所得税）特定', 630000],
@@ -409,7 +411,7 @@ function buildSimSheet(k) {
     // V: 役員報酬控除後利益(全役員ベース。他の役員のコストは結果サマリーで採用中の金額を使用)
     ws.getCell(`V${r}`).value = { formula: IFB(`'入力'!$C$${COMPANY_PROFIT_ROW}-$U${r}-${otherCostRef}`) };
     // W: 法人税等
-    ws.getCell(`W${r}`).value = { formula: IFB(`IF($V${r}<=0,0,IF($V${r}<=8000000,$V${r}*'入力'!$C$${RATE_ROWS.corplow},8000000*'入力'!$C$${RATE_ROWS.corplow}+($V${r}-8000000)*'入力'!$C$${RATE_ROWS.corphigh}))`) };
+    ws.getCell(`W${r}`).value = { formula: IFB(`IF($V${r}<=0,0,IF($V${r}<=8000000,$V${r}*'入力'!$C$${RATE_ROWS.corplow},8000000*'入力'!$C$${RATE_ROWS.corplow}+($V${r}-8000000)*'入力'!$C$${RATE_ROWS.corphigh}))+'入力'!$C$${RATE_ROWS.corpkintou}`) };
     // X: 内部留保
     ws.getCell(`X${r}`).value = { formula: IFB(`$V${r}-$W${r}`) };
     // Y: トータル手取り(全役員ベース。他の役員の手取りは結果サマリーで採用中の金額を使用)
@@ -506,7 +508,7 @@ wsSum.getCell(`C${SUM_AGG_ROWS.rieki}`).value = { formula: `'入力'!$C$${COMPAN
 wsSum.getCell(`C${SUM_AGG_ROWS.rieki}`).numFmt = YEN;
 
 wsSum.getCell(`B${SUM_AGG_ROWS.houjinzei}`).value = '法人税等';
-wsSum.getCell(`C${SUM_AGG_ROWS.houjinzei}`).value = { formula: `IF(C${SUM_AGG_ROWS.rieki}<=0,0,IF(C${SUM_AGG_ROWS.rieki}<=8000000,C${SUM_AGG_ROWS.rieki}*'入力'!$C$${RATE_ROWS.corplow},8000000*'入力'!$C$${RATE_ROWS.corplow}+(C${SUM_AGG_ROWS.rieki}-8000000)*'入力'!$C$${RATE_ROWS.corphigh}))` };
+wsSum.getCell(`C${SUM_AGG_ROWS.houjinzei}`).value = { formula: `IF(C${SUM_AGG_ROWS.rieki}<=0,0,IF(C${SUM_AGG_ROWS.rieki}<=8000000,C${SUM_AGG_ROWS.rieki}*'入力'!$C$${RATE_ROWS.corplow},8000000*'入力'!$C$${RATE_ROWS.corplow}+(C${SUM_AGG_ROWS.rieki}-8000000)*'入力'!$C$${RATE_ROWS.corphigh}))+'入力'!$C$${RATE_ROWS.corpkintou}` };
 wsSum.getCell(`C${SUM_AGG_ROWS.houjinzei}`).numFmt = YEN;
 
 wsSum.getCell(`B${SUM_AGG_ROWS.naibu}`).value = '内部留保(税引後)';

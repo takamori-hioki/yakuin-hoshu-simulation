@@ -47,10 +47,12 @@ check('sumShakaihoKaisha', agg.sumShakaihoKaisha === sumShakaihoKaishaCheck, `${
 
 // 2) corp tax recomputed independently from rieki
 const rieki = state.profitBefore - agg.sumKaishaCost;
-let houjinzei;
-if (rieki <= 0) houjinzei = 0;
-else if (rieki <= 8000000) houjinzei = rieki * state.corpRateLow;
-else houjinzei = 8000000 * state.corpRateLow + (rieki - 8000000) * state.corpRateHigh;
+let houjinShotokuBun;
+if (rieki <= 0) houjinShotokuBun = 0;
+else if (rieki <= 8000000) houjinShotokuBun = rieki * state.corpRateLow;
+else houjinShotokuBun = 8000000 * state.corpRateLow + (rieki - 8000000) * state.corpRateHigh;
+// 法人住民税の均等割は赤字でも課され、役員が何人いても法人単位で年1回
+const houjinzei = houjinShotokuBun + state.houjinKintouwari;
 const naibuRyuho = rieki - houjinzei;
 check('rieki', agg.rieki === rieki, `${agg.rieki} vs ${rieki}`);
 check('houjinzei', Math.abs(agg.houjinzei - houjinzei) < 1, `${agg.houjinzei} vs ${houjinzei}`);

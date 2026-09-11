@@ -125,10 +125,12 @@ async function main() {
   }));
   refPerOfficer.forEach(r => { sumX += r.X; sumKaishaCost += r.kaishaCost; sumKojinTedori += r.kojinTedori; });
   const rieki = profitBefore - sumKaishaCost;
-  let houjinzei;
-  if (rieki <= 0) houjinzei = 0;
-  else if (rieki <= 8000000) houjinzei = rieki * 0.2137;
-  else houjinzei = 8000000 * 0.2137 + (rieki - 8000000) * 0.3358;
+  let houjinShotokuBun;
+  if (rieki <= 0) houjinShotokuBun = 0;
+  else if (rieki <= 8000000) houjinShotokuBun = rieki * 0.2137;
+  else houjinShotokuBun = 8000000 * 0.2137 + (rieki - 8000000) * 0.3358;
+  // 法人住民税の均等割は赤字でも課され、役員が何人いても法人単位で年1回
+  const houjinzei = houjinShotokuBun + 70000;
   const naibuRyuho = rieki - houjinzei;
   const grandTotal = naibuRyuho + sumKojinTedori;
 
